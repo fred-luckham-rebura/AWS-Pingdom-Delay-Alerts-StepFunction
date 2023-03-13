@@ -1,0 +1,105 @@
+{
+  "StartAt": "Down/Up Check",
+  "States": {
+    "Down/Up Check": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.current_state",
+          "StringEquals": "DOWN",
+          "Next": "Wait"
+        },
+        {
+          "Variable": "$.current_state",
+          "StringEquals": "UP",
+          "Next": "Check for existing - Lambda"
+        }
+      ],
+      "Default": "Fail"
+    },
+    "Check for existing - Lambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "<SECONDARY LAMBDA ARN>"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Check for pass on flag"
+    },
+    "Check for pass on flag": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.pass_on",
+          "BooleanEquals": true,
+          "Next": "Outage Alert"
+        },
+        {
+          "Variable": "$.pass_on",
+          "BooleanEquals": false,
+          "Next": "Breif Outage"
+        }
+      ],
+      "Default": "Fail"
+    },
+    "Breif Outage": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "<SNS TOPIC ARN BRIEF OUTAGE>",
+        "Subject": "Site Status Notification",
+        "Message": {
+          "check_name.$": "$.check_name",
+          "check_type.$": "$.check_type",
+          "state_changed_timestamp.$": "$.state_changed_timestamp",
+          "state_changed_utc_time.$": "$.state_changed_utc_time",
+          "long_description.$": "$.long_description",
+          "current_state.$": "$.current_state",
+          "full_url.$": "$.full_url",
+          "time_difference.$": "$.time_difference"
+        }
+      },
+      "End": true
+    },
+    "Wait": {
+      "Type": "Wait",
+      "Seconds": 300,
+      "Next": "Outage Alert"
+    },
+    "Outage Alert": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "<SNS TOPIC ARN OUTAGE>",
+        "Subject": "Site Status Notification",
+        "Message": {
+          "check_name.$": "$.check_name",
+          "check_type.$": "$.check_type",
+          "state_changed_timestamp.$": "$.state_changed_timestamp",
+          "state_changed_utc_time.$": "$.state_changed_utc_time",
+          "long_description.$": "$.long_description",
+          "current_state.$": "$.current_state",
+          "full_url.$": "$.full_url"
+        }
+      },
+      "End": true
+    },
+    "Fail": {
+      "Type": "Fail"
+    }
+  }
+}
