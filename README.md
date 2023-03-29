@@ -11,4 +11,4 @@ This state machine requires the following Lambdas in order to function:
 - ![AlertingPingdomCheckServiceLevel](https://github.com/Fred-Luckham/AWS-Pingdom-Delay-Alerts-CheckServiceLevel)
 - ![AlertingPingdomCheckExecutions](https://github.com/Fred-Luckham/AWS-Pingdom-Delay-Alerts-CheckExecutions)
 - AlertingPingdomOpsgenie
-- AlertingPingdomSNS
+- ![AlertingPingdomSNS](https://github.com/Fred-Luckham/AWS-Pingdom-Delay-Alerts-SNS)
