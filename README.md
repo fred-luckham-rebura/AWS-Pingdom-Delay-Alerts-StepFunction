@@ -4,3 +4,11 @@ A serverless AWS application that integrates site alerts through pingdom with SN
 It has the capabiliity to route alerts depending on support level (out-of-hours etc..) and adds a delay step to prevent call-outs on breif outages. 
 
 ![Pingdom Alerts StepFunction](https://github.com/Fred-Luckham/AWS-Pingdom-Delay-Alerts-StepFunction/blob/main/stepfunctions_graph.png?raw=true)
+
+This state machine requires the following Lambdas in order to function:
+
+- AlertingPingdom
+- AlertingPingdomCheckServiceLevel
+- AlertingPingdomCheckExecutions
+- AlertingPingdomOpsgenie
+- AlertingPingdomSNS
