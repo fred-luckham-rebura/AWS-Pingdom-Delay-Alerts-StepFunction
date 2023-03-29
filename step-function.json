@@ -1,29 +1,52 @@
 {
-  "StartAt": "Down/Up Check",
+  "StartAt": "Check support level",
   "States": {
+    "Check support level": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:<REGION>:<ACCOUNT>:function:AlertingPingdomCheckServiceLevel:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Down/Up Check"
+    },
     "Down/Up Check": {
       "Type": "Choice",
       "Choices": [
         {
           "Variable": "$.current_state",
           "StringEquals": "DOWN",
-          "Next": "Wait"
+          "Next": "Wait 5 min"
         },
         {
           "Variable": "$.current_state",
           "StringEquals": "UP",
-          "Next": "Check for existing - Lambda"
+          "Next": "Check for existing StepFunction process"
         }
       ],
       "Default": "Fail"
     },
-    "Check for existing - Lambda": {
+    "Check for existing StepFunction process": {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "<SECONDARY LAMBDA ARN>"
+        "FunctionName": "arn:aws:lambda:<REGION>:<ACCOUNT>:function:AlertingPingdomCheckExecutions:$LATEST"
       },
       "Retry": [
         {
@@ -46,57 +69,66 @@
         {
           "Variable": "$.pass_on",
           "BooleanEquals": true,
-          "Next": "Outage Alert"
+          "Next": "Send to Opsgenie"
         },
         {
           "Variable": "$.pass_on",
           "BooleanEquals": false,
-          "Next": "Breif Outage"
+          "Next": "Send to Jira"
         }
       ],
       "Default": "Fail"
     },
-    "Breif Outage": {
+    "Send to Jira": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::sns:publish",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
       "Parameters": {
-        "TopicArn": "<SNS TOPIC ARN BRIEF OUTAGE>",
-        "Subject": "Site Status Notification",
-        "Message": {
-          "check_name.$": "$.check_name",
-          "check_type.$": "$.check_type",
-          "state_changed_timestamp.$": "$.state_changed_timestamp",
-          "state_changed_utc_time.$": "$.state_changed_utc_time",
-          "long_description.$": "$.long_description",
-          "current_state.$": "$.current_state",
-          "full_url.$": "$.full_url",
-          "time_difference.$": "$.time_difference"
-        }
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:<REGION>:<ACCOUNT>:function:AlertingPingdomSNS:$LATEST"
       },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
       "End": true
     },
-    "Wait": {
+    "Wait 5 min": {
       "Type": "Wait",
       "Seconds": 300,
-      "Next": "Outage Alert"
+      "Next": "Send to Opsgenie"
     },
-    "Outage Alert": {
+    "Send to Opsgenie": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::sns:publish",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
       "Parameters": {
-        "TopicArn": "<SNS TOPIC ARN OUTAGE>",
-        "Subject": "Site Status Notification",
-        "Message": {
-          "check_name.$": "$.check_name",
-          "check_type.$": "$.check_type",
-          "state_changed_timestamp.$": "$.state_changed_timestamp",
-          "state_changed_utc_time.$": "$.state_changed_utc_time",
-          "long_description.$": "$.long_description",
-          "current_state.$": "$.current_state",
-          "full_url.$": "$.full_url"
-        }
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:<REGION>:<ACCOUNT>:function:AlertingPingdomOpsgenie:$LATEST"
       },
-      "End": true
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Send to Jira"
     },
     "Fail": {
       "Type": "Fail"
