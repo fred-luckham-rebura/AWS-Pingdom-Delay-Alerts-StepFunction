@@ -7,7 +7,7 @@ It has the capabiliity to route alerts depending on support level (out-of-hours 
 
 This state machine requires the following Lambdas in order to function:
 
-- AlertingPingdom
+- ![AlertingPingdom](https://github.com/Fred-Luckham/AWS-Pingdom-Delay-Alerts-Inbound/blob/main)
 - AlertingPingdomCheckServiceLevel
 - AlertingPingdomCheckExecutions
 - AlertingPingdomOpsgenie
