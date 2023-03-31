@@ -1,5 +1,5 @@
 # AWS-Pingdom-Delay-Alerts-StepFunction
-A serverless AWS application that integrates site alerts through Pingdom with SNS topics in AWS. The idea is to allow a configuration layer for alerting. The application receives Pingdom site alerts via a Lambda which then passes off the payload to the Step Function below. This then handles routing and passes it off to the relevant alerting endpoints and support queues. 
+A serverless AWS application that integrates site alerts through Pingdom with SNS topics in AWS. The provides a configuration layer for in-bound alerting. The application receives Pingdom site alerts via a Lambda which then passes off the payload to the Step Function below. This then handles routing and passes it off to the relevant alerting endpoints and support queues. 
 
 It has the capability to route alerts depending on support level (out-of-hours etc..) and adds a delay step to prevent call-outs on brief outages. 
 
